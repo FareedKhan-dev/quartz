@@ -1,0 +1,31 @@
+# The 45,211,383 parameter model. Four H100s, about fifteen hours for stage one.
+vocab_size: 8192
+d_model: 512
+num_heads: 8
+num_kv_heads: 4
+num_layers: 27
+max_seq_len: 2048
+
+rope_theta: 1.0e5
+dtype: bfloat16
+
+lanes: 4
+sinkhorn_iters: 20
+
+imprint_sites: [2, 15]
+imprint_orders: [2, 3]
+imprint_slots: 8192
+
+dowser_dim: 128
+dowser_probes: 4
+gauge_probes: 8
+
+# The budget allows 704 positions. We take 256 because the 99th percentile
+# session is 247 tokens, and the other 448 would be cache we never touch.
+kv_window: 256
+kv_bits: 8
+act_bits: 8
+weight_bits: "default=2,loom.phi=4,attn.out_proj=3"
+
+remat: true
+scan_unroll: 1
