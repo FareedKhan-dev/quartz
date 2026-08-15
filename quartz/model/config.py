@@ -4,8 +4,7 @@ Nothing in this package hard-codes a shape. Everything is derived from a
 QuartzConfig, so a two-layer model on a laptop and the 45M model on four cards
 run identical code paths.
 """
-from dataclasses import dataclass, field, asdict
-from typing import Tuple
+from dataclasses import asdict, dataclass
 
 # --- tokenizer -------------------------------------------------------------
 PAD_ID, EOS_ID, BOS_ID, UNK_ID = 0, 1, 2, 3
@@ -77,8 +76,8 @@ class QuartzConfig:
     sinkhorn_iters: int = 20
 
     # Imprint
-    imprint_sites: Tuple[int, ...] = (2, 15)
-    imprint_orders: Tuple[int, ...] = (2, 3)
+    imprint_sites: tuple[int, ...] = (2, 15)
+    imprint_orders: tuple[int, ...] = (2, 3)
     imprint_heads: int = 0            # 0 derives it from d_model
     imprint_slots: int = 8192
 
@@ -177,17 +176,23 @@ class QuartzConfig:
 
 #: Named geometries. `base` is the 45,211,383 parameter model the post builds.
 PRESETS = {
-    "base": dict(d_model=512, num_heads=8, num_kv_heads=4, num_layers=27,
-                 imprint_sites=(2, 15)),
-    "wide": dict(d_model=768, num_heads=12, num_kv_heads=6, num_layers=27,
-                 imprint_sites=(2, 15)),
-    "tiny": dict(d_model=128, num_heads=4, num_kv_heads=2, num_layers=2,
-                 imprint_sites=(1,), imprint_slots=256, lanes=2,
-                 max_seq_len=256, kv_window=128, remat=False),
+    "base": {"d_model": 512, "num_heads": 8, "num_kv_heads": 4, "num_layers": 27,
+             "imprint_sites": (2, 15)},
+    "wide": {"d_model": 768, "num_heads": 12, "num_kv_heads": 6, "num_layers": 27,
+             "imprint_sites": (2, 15)},
+    "tiny": {"d_model": 128, "num_heads": 4, "num_kv_heads": 2, "num_layers": 2,
+             "imprint_sites": (1,), "imprint_slots": 256, "lanes": 2,
+             "max_seq_len": 256, "kv_window": 128, "remat": False},
 }
 
 
 def preset(name: str, **overrides) -> QuartzConfig:
+    """A named geometry, with any field overridden.
+
+    The overrides are applied on top of the preset, so `preset("base",
+    num_layers=4)` is the shipped geometry shortened rather than a fourth entry
+    in the table above.
+    """
     if name not in PRESETS:
         raise KeyError(f"unknown preset {name!r}, have {sorted(PRESETS)}")
     return QuartzConfig(**{**PRESETS[name], **overrides})
